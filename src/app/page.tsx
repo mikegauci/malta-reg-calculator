@@ -28,12 +28,14 @@ const VehicleTaxCalculator: React.FC = () => {
 
   const [results, setResults] = useState<Results | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setInputs({ ...inputs, [name]: value });
   };
 
-  const calculateTax = () => {
+  const calculateTax = async () => {
     const { co2Emissions, rv, length, euroStandard, vehicleType } = inputs;
 
     const numericCo2Emissions = parseFloat(co2Emissions);
@@ -41,12 +43,18 @@ const VehicleTaxCalculator: React.FC = () => {
     const numericLength = parseFloat(length);
 
     if (isNaN(numericCo2Emissions) || isNaN(numericRv) || isNaN(numericLength)) {
-      alert("Please enter valid numeric values for CO2 Emissions, Registration Value, and Length.");
+      alert(
+        "Please enter valid numeric values for CO2 Emissions, Registration Value, and Length."
+      );
       return;
     }
 
     const lengthTaxRate = getLengthTaxRate(numericLength);
-    const co2TaxRate = getCo2TaxRate(vehicleType, numericCo2Emissions, euroStandard);
+    const co2TaxRate = getCo2TaxRate(
+      vehicleType,
+      numericCo2Emissions,
+      euroStandard
+    );
 
     const lengthTax = (numericLength * numericRv * lengthTaxRate) / 100;
     const co2Tax = numericCo2Emissions * numericRv * co2TaxRate;
@@ -58,6 +66,45 @@ const VehicleTaxCalculator: React.FC = () => {
       totalTax,
       classicCarTax,
     });
+
+    // Submit data to API after successful calculation
+    await submitData({
+      co2Emissions,
+      rv,
+      length,
+      euroStandard,
+      vehicleType,
+      totalTax,
+      classicCarTax,
+    });
+  };
+
+  const submitData = async (data: {
+    co2Emissions: string;
+    rv: string;
+    length: string;
+    euroStandard: number;
+    vehicleType: string;
+    totalTax: number;
+    classicCarTax: number;
+  }) => {
+    try {
+      const response = await fetch("/api/save-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        alert("Data submitted successfully!");
+      } else {
+        const error = await response.json();
+        alert("Failed to submit data: " + error.message);
+      }
+    } catch (err) {
+      alert("An error occurred while submitting data.");
+      console.error(err);
+    }
   };
 
   const getLengthTaxRate = (length: number): number => {
@@ -71,7 +118,11 @@ const VehicleTaxCalculator: React.FC = () => {
     return 0.0034;
   };
 
-  const getCo2TaxRate = (vehicleType: VehicleType, co2Emissions: number, euroStandard: number): number => {
+  const getCo2TaxRate = (
+    vehicleType: VehicleType,
+    co2Emissions: number,
+    euroStandard: number
+  ): number => {
     const co2RateTable: Record<VehicleType, Record<number, number[]>> = {
       petrol: {
         0: [0.07, 0.15, 0.20, 0.23],
@@ -108,10 +159,14 @@ const VehicleTaxCalculator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Malta Car Registration Tax Calculator</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Malta Car Registration Tax Calculator
+        </h1>
         <form className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">CO2 Emissions (g/km):</label>
+            <label className="block text-sm font-medium mb-1">
+              CO2 Emissions (g/km):
+            </label>
             <input
               type="number"
               name="co2Emissions"
@@ -121,7 +176,9 @@ const VehicleTaxCalculator: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Registration Value (RV):</label>
+            <label className="block text-sm font-medium mb-1">
+              Registration Value (RV):
+            </label>
             <input
               type="number"
               name="rv"
@@ -131,7 +188,9 @@ const VehicleTaxCalculator: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Vehicle Length (mm):</label>
+            <label className="block text-sm font-medium mb-1">
+              Vehicle Length (mm):
+            </label>
             <input
               type="number"
               name="length"
@@ -153,7 +212,9 @@ const VehicleTaxCalculator: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Euro Standard:</label>
+            <label className="block text-sm font-medium mb-1">
+              Euro Standard:
+            </label>
             <select
               name="euroStandard"
               value={inputs.euroStandard}
@@ -172,7 +233,7 @@ const VehicleTaxCalculator: React.FC = () => {
             onClick={calculateTax}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded"
           >
-            Calculate
+            Calculate and Submit
           </button>
         </form>
         {results && (
@@ -182,17 +243,25 @@ const VehicleTaxCalculator: React.FC = () => {
               <thead>
                 <tr>
                   <th className="border border-gray-700 p-2">Vehicle Type</th>
-                  <th className="border border-gray-700 p-2">Total Registration Tax (€)</th>
+                  <th className="border border-gray-700 p-2">
+                    Total Registration Tax (€)
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="border border-gray-700 p-2 capitalize">{inputs.vehicleType}</td>
-                  <td className="border border-gray-700 p-2 capitalize">{results.totalTax.toFixed(2)}</td>
+                  <td className="border border-gray-700 p-2 capitalize">
+                    {inputs.vehicleType}
+                  </td>
+                  <td className="border border-gray-700 p-2">
+                    {results.totalTax.toFixed(2)}
+                  </td>
                 </tr>
                 <tr>
                   <td className="border border-gray-700 p-2">Classic</td>
-                  <td className="border border-gray-700 p-2">{results.classicCarTax.toFixed(2)}</td>
+                  <td className="border border-gray-700 p-2">
+                    {results.classicCarTax.toFixed(2)}
+                  </td>
                 </tr>
               </tbody>
             </table>
