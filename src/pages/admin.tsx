@@ -14,6 +14,9 @@ const AdminPage = () => {
     vehicle_type: string;
     total_tax: number;
     classic_car_tax: number;
+    manufacturer: string;
+    model: string;
+    year: number;
   }
 
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -60,8 +63,8 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-4xl bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Databse Entries</h1>
+      <div className="w-full bg-gray-800 rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">Entry Database</h1>
         {loading ? (
           <p className="text-center text-gray-300">Loading...</p>
         ) : error ? (
@@ -73,9 +76,12 @@ const AdminPage = () => {
             <table className="w-full border-collapse border border-gray-700 text-left">
               <thead>
                 <tr className="bg-gray-700">
+                  <th className="border border-gray-600 p-2">Manufacturer</th>
+                  <th className="border border-gray-600 p-2">Model</th>
+                  <th className="border border-gray-600 p-2">Year</th>
                   <th className="border border-gray-600 p-2">CO2 Emissions</th>
                   <th className="border border-gray-600 p-2">RV</th>
-                  <th className="border border-gray-600 p-2">Length</th>
+                  <th className="border border-gray-600 p-2">Length (MM)</th>
                   <th className="border border-gray-600 p-2">Euro Standard</th>
                   <th className="border border-gray-600 p-2">Vehicle Type</th>
                   <th className="border border-gray-600 p-2">Total Tax (€)</th>
@@ -88,6 +94,11 @@ const AdminPage = () => {
                     key={entry.id}
                     className={index % 2 === 0 ? "bg-gray-800" : "bg-gray-700"}
                   >
+                    <td className="border border-gray-600 p-2">
+                      {entry.manufacturer}
+                    </td>
+                    <td className="border border-gray-600 p-2">{entry.model}</td>
+                    <td className="border border-gray-600 p-2">{entry.year}</td>
                     <td className="border border-gray-600 p-2">
                       {entry.co2_emissions}
                     </td>
