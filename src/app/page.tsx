@@ -108,7 +108,7 @@ const VehicleTaxCalculator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Malta Car Tax Calculator</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Malta Car Registration Tax Calculator</h1>
         <form className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">CO2 Emissions (g/km):</label>
