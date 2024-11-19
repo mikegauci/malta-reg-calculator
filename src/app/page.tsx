@@ -157,7 +157,7 @@ const VehicleTaxCalculator: React.FC = () => {
       Malta Car Registration Tax Calculator
     </h1>
     <form className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Manufacturer:</label>
           <input
@@ -179,7 +179,7 @@ const VehicleTaxCalculator: React.FC = () => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Year:</label>
           <input
@@ -203,7 +203,7 @@ const VehicleTaxCalculator: React.FC = () => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">
             Registration Value (RV):
@@ -229,7 +229,7 @@ const VehicleTaxCalculator: React.FC = () => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Vehicle Type:</label>
           <select
@@ -299,6 +299,7 @@ const VehicleTaxCalculator: React.FC = () => {
     )}
   </div>
 </div>
+
 
   );
 };
