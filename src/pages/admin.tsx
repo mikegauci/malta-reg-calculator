@@ -2,7 +2,6 @@
 
 import { supabase } from "../lib/supabase";
 import React, { useEffect, useState } from "react";
-import "../app/globals.css";
 
 const AdminPage = () => {
   interface Entry {
@@ -63,8 +62,8 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6">
-      <div className="w-full bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Entry Database</h1>
+      <div className="w-full max-w-6xl bg-gray-800 rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">Admin Dashboard</h1>
         {loading ? (
           <p className="text-center text-gray-300">Loading...</p>
         ) : error ? (

@@ -117,37 +117,39 @@ const VehicleTaxCalculator: React.FC = () => {
     co2Emissions: number,
     euroStandard: number
   ): number => {
-    const co2RateTable: Record<VehicleType, Record<number, number[]>> = {
-      petrol: {
-        0: [0.07, 0.15, 0.20, 0.23],
-        101: [0.09, 0.17, 0.23, 0.26],
-        131: [0.10, 0.19, 0.26, 0.30],
-        141: [0.11, 0.22, 0.29, 0.33],
-        151: [0.16, 0.24, 0.32, 0.37],
-        181: [0.18, 0.26, 0.35, 0.40],
-        221: [0.21, 0.29, 0.38, 0.44],
-        251: [0.23, 0.31, 0.41, 0.47],
-      },
-      diesel: {
-        0: [0.07, 0.15, 0.20, 0.23],
-        101: [0.09, 0.17, 0.23, 0.26],
-        131: [0.10, 0.19, 0.26, 0.30],
-        141: [0.11, 0.22, 0.29, 0.33],
-        151: [0.16, 0.24, 0.32, 0.37],
-        181: [0.18, 0.26, 0.35, 0.40],
-        221: [0.21, 0.29, 0.38, 0.44],
-        251: [0.23, 0.31, 0.41, 0.47],
-      },
+    const co2RateTable: Record<VehicleType, { range: [number, number]; rates: number[] }[]> = {
+      petrol: [
+        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
+        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
+        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
+        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
+        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
+        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
+        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
+        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
+      ],
+      diesel: [
+        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
+        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
+        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
+        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
+        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
+        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
+        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
+        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
+      ],
     };
-
+  
     const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
-
-    for (const [threshold, rates] of Object.entries(co2RateTable[vehicleType])) {
-      if (co2Emissions <= parseFloat(threshold)) {
+  
+    const ranges = co2RateTable[vehicleType];
+    for (const { range, rates } of ranges) {
+      if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
         return rates[euroIndex] / 100;
       }
     }
-    return 0;
+  
+    throw new Error("CO2 emissions out of range.");
   };
 
   return (
