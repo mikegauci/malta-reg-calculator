@@ -18,6 +18,7 @@ interface Inputs {
 interface Results {
   totalTax: number;
   classicCarTax: number;
+  workings: string[];
 }
 
 const VehicleTaxCalculator: React.FC = () => {
@@ -42,7 +43,7 @@ const VehicleTaxCalculator: React.FC = () => {
   };
 
   const calculateTax = async () => {
-    const { co2Emissions, rv, length, euroStandard, vehicleType } = inputs;
+    const { co2Emissions, rv, length, euroStandard, vehicleType, year } = inputs;
 
     const numericCo2Emissions = parseFloat(co2Emissions);
     const numericRv = parseFloat(rv);
@@ -56,21 +57,23 @@ const VehicleTaxCalculator: React.FC = () => {
     }
 
     const lengthTaxRate = getLengthTaxRate(numericLength);
-    const co2TaxRate = getCo2TaxRate(
-      vehicleType,
-      numericCo2Emissions,
-      euroStandard
-    );
-
-    const lengthTax = (numericLength * numericRv * lengthTaxRate) / 100;
-    const co2Tax = numericCo2Emissions * numericRv * co2TaxRate;
-
-    const totalTax = lengthTax + co2Tax;
-    const classicCarTax = totalTax * 0.40;
+    const co2TaxRate = getCo2TaxRate(vehicleType, numericCo2Emissions, euroStandard, parseInt(year));
+  
+    const lengthTax = parseFloat(((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2));
+    const co2Tax = parseFloat((numericCo2Emissions * numericRv * co2TaxRate).toFixed(2));
+    const totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
+    const classicCarTax = parseFloat((totalTax * 0.40).toFixed(2));
+  
+    const workings = [
+      `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(4)} / 100 = ${lengthTax.toFixed(2)}`,
+      `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(4)} = ${co2Tax.toFixed(2)}`,
+      `Total Tax Calculation: ${lengthTax.toFixed(2)} + ${co2Tax.toFixed(2)} = ${totalTax.toFixed(2)}`,
+    ];
 
     setResults({
       totalTax,
       classicCarTax,
+      workings,
     });
 
     // Submit data to API after successful calculation
@@ -78,6 +81,7 @@ const VehicleTaxCalculator: React.FC = () => {
       ...inputs,
       totalTax,
       classicCarTax,
+      workings: []
     });
   };
 
@@ -115,9 +119,13 @@ const VehicleTaxCalculator: React.FC = () => {
   const getCo2TaxRate = (
     vehicleType: VehicleType,
     co2Emissions: number,
-    euroStandard: number
+    euroStandard: number,
+    year: number
   ): number => {
-    const co2RateTable: Record<VehicleType, { range: [number, number]; rates: number[] }[]> = {
+    const co2RateTable: Record<
+      VehicleType,
+      { range: [number, number]; rates: number[] }[]
+    > = {
       petrol: [
         { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
         { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
@@ -139,168 +147,191 @@ const VehicleTaxCalculator: React.FC = () => {
         { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
       ],
     };
-  
+
+    // Special rates for diesel vehicles older than 2012
+    const dieselOldRateTable = [
+      { range: [0, 100], rates: [0.0021, 0.0021, 0.0032, 0.0037] },
+      { range: [101, 130], rates: [0.0024, 0.0024, 0.0036, 0.0042] },
+      { range: [131, 140], rates: [0.0027, 0.0027, 0.0041, 0.0047] },
+      { range: [141, 150], rates: [0.0031, 0.0031, 0.0045, 0.0053] },
+      { range: [151, 180], rates: [0.0033, 0.0033, 0.0051, 0.0060] },
+      { range: [181, 220], rates: [0.0036, 0.0036, 0.0056, 0.0065] },
+      { range: [221, 250], rates: [0.0040, 0.0040, 0.0060, 0.0070] },
+      { range: [251, Infinity], rates: [0.0043, 0.0043, 0.0065, 0.0075] },
+    ];
+
+    // Determine euro index
     const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
-  
+
+    // Use special diesel table if year is before 2012
+    if (vehicleType === "diesel" && year < 2012) {
+      for (const { range, rates } of dieselOldRateTable) {
+        if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
+          return rates[Math.min(euroIndex, 3)];
+        }
+      }
+    }
+
+    // Default table
     const ranges = co2RateTable[vehicleType];
     for (const { range, rates } of ranges) {
       if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-        return rates[euroIndex] / 100;
+        return rates[euroIndex] / 100; // Convert percentage to decimal
       }
     }
-  
+
     throw new Error("CO2 emissions out of range.");
   };
 
+
   return (
-<div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
-  <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-md p-6">
-    <h1 className="text-2xl font-bold text-center mb-6">
-      Malta Car Registration Tax Calculator
-    </h1>
-    <form className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Manufacturer:</label>
-          <input
-            type="text"
-            name="manufacturer"
-            value={inputs.manufacturer}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Model:</label>
-          <input
-            type="text"
-            name="model"
-            value={inputs.model}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Year:</label>
-          <input
-            type="number"
-            name="year"
-            value={inputs.year}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            CO2 Emissions (g/km):
-          </label>
-          <input
-            type="number"
-            name="co2Emissions"
-            value={inputs.co2Emissions}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Registration Value (RV):
-          </label>
-          <input
-            type="number"
-            name="rv"
-            value={inputs.rv}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Vehicle Length (mm):
-          </label>
-          <input
-            type="number"
-            name="length"
-            value={inputs.length}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Vehicle Type:</label>
-          <select
-            name="vehicleType"
-            value={inputs.vehicleType}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+    <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Malta Car Registration Tax Calculator
+        </h1>
+        <form className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Manufacturer:</label>
+              <input
+                type="text"
+                name="manufacturer"
+                value={inputs.manufacturer}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Model:</label>
+              <input
+                type="text"
+                name="model"
+                value={inputs.model}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Year:</label>
+              <input
+                type="number"
+                name="year"
+                value={inputs.year}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                CO2 Emissions (g/km):
+              </label>
+              <input
+                type="number"
+                name="co2Emissions"
+                value={inputs.co2Emissions}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Registration Value (RV):
+              </label>
+              <input
+                type="number"
+                name="rv"
+                value={inputs.rv}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Vehicle Length (mm):
+              </label>
+              <input
+                type="number"
+                name="length"
+                value={inputs.length}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Vehicle Type:</label>
+              <select
+                name="vehicleType"
+                value={inputs.vehicleType}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              >
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Euro Standard:</label>
+              <select
+                name="euroStandard"
+                value={inputs.euroStandard}
+                onChange={handleInputChange}
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+              >
+                {[6, 5, 4, 3, 2, 1].map((num) => (
+                  <option key={num} value={num}>
+                    Euro {num}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={calculateTax}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded"
           >
-            <option value="petrol">Petrol</option>
-            <option value="diesel">Diesel</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Euro Standard:</label>
-          <select
-            name="euroStandard"
-            value={inputs.euroStandard}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
-          >
-            {[6, 5, 4, 3, 2, 1].map((num) => (
-              <option key={num} value={num}>
-                Euro {num}
-              </option>
-            ))}
-          </select>
-        </div>
+            Calculate and Submit
+          </button>
+        </form>
+        {results && (
+          <div className="mt-6">
+            <h2 className="text-xl font-bold text-center mb-4">Results</h2>
+            <table className="w-full border-collapse border border-gray-700 mb-4">
+              <thead>
+                <tr>
+                  <th className="border border-gray-700 p-2">Vehicle Type</th>
+                  <th className="border border-gray-700 p-2">Total Registration Tax (€)</th>
+                  <th className="border border-gray-700 p-2">Classic Car Tax (€)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-700 p-2 capitalize">{inputs.vehicleType}</td>
+                  <td className="border border-gray-700 p-2">{results.totalTax.toFixed(2)}</td>
+                  <td className="border border-gray-700 p-2">{results.classicCarTax.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+            <h3 className="text-lg font-bold mb-2">Calculation Workings:</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              {results.workings.map((line, index) => (
+                <li key={index} className="text-sm text-gray-300">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
       </div>
-      <button
-        type="button"
-        onClick={calculateTax}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded"
-      >
-        Calculate and Submit
-      </button>
-    </form>
-    {results && (
-      <div className="mt-6">
-        <h2 className="text-xl font-bold text-center mb-4">Results</h2>
-        <table className="w-full border-collapse border border-gray-700">
-          <thead>
-            <tr>
-              <th className="border border-gray-700 p-2">Vehicle Type</th>
-              <th className="border border-gray-700 p-2">
-                Total Registration Tax (€)
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="border border-gray-700 p-2 capitalize">
-                {inputs.vehicleType}
-              </td>
-              <td className="border border-gray-700 p-2">
-                {results.totalTax.toFixed(2)}
-              </td>
-            </tr>
-            <tr>
-              <td className="border border-gray-700 p-2">Classic</td>
-              <td className="border border-gray-700 p-2">
-                {results.classicCarTax.toFixed(2)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )}
-  </div>
-</div>
+    </div>
 
 
   );
