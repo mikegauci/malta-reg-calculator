@@ -3,6 +3,7 @@
 import { supabase } from "../lib/supabase";
 import React, { useEffect, useState } from "react";
 import "../app/globals.css";
+import Link from "next/link";
 
 const AdminPage = () => {
   interface Entry {
@@ -109,9 +110,9 @@ const AdminPage = () => {
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-6xl bg-gray-800 rounded-lg shadow-md p-6">
         <h3 className="text-center mb-2">
-          <a href="/" className="text-blue-500 underline">
+          <Link href="/" className="text-blue-500 underline">
             Go to Calculator
-          </a>
+          </Link>
         </h3>
         <h1 className="text-2xl font-bold text-center mb-6">Admin Dashboard</h1>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState } from "react";
 
 type VehicleType = "petrol" | "diesel";
@@ -330,9 +331,9 @@ const VehicleTaxCalculator: React.FC = () => {
           </div>
         )}
         <h3 className="text-center mt-4">
-          <a href="/admin" className="text-blue-500 underline">
+          <Link href="/admin" className="text-blue-500 underline">
             Go to Database Dashboard
-          </a>
+          </Link>
         </h3>
 
       </div>
