@@ -314,9 +314,8 @@ const VehicleTaxCalculator: React.FC = () => {
               <tbody>
                 <tr>
                   <td className="border border-gray-700 p-2 capitalize">{inputs.vehicleType}</td>
-                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(results.totalTax)}</td>
-                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(results.classicCarTax)}</td>
-
+                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(Math.round(results.totalTax))}</td>
+                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(Math.round(results.classicCarTax))}</td>
                 </tr>
               </tbody>
             </table>

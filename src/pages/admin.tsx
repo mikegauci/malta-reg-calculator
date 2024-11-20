@@ -181,14 +181,15 @@ const AdminPage = () => {
                     <td className="border border-gray-600 p-2">{entry.euro_standard}</td>
                     <td className="border border-gray-600 p-2 capitalize">{entry.vehicle_type}</td>
                     <td className="border border-gray-600 p-2">
-                      {new Intl.NumberFormat().format(entry.total_tax)}
+                      {new Intl.NumberFormat().format(Math.round(entry.total_tax))}
                     </td>
                     <td className="border border-gray-600 p-2">
-                      {new Intl.NumberFormat().format(entry.classic_car_tax)}
+                      {new Intl.NumberFormat().format(Math.round(entry.classic_car_tax))}
                     </td>
                   </tr>
                 ))}
               </tbody>
+
 
             </table>
           </div>
