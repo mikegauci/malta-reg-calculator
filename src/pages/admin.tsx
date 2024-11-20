@@ -113,7 +113,7 @@ const AdminPage = () => {
   return (
     <>
       <Head>
-        <title>Dashboard - Malta Car Registration Tax Calculator</title>
+        <title>Database - Malta Car Registration Tax Calculator</title>
         <meta name="description" content="View and manage submissions for the car tax calculator." />
       </Head>
       <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6">
@@ -123,7 +123,7 @@ const AdminPage = () => {
               Go to Calculator
             </Link>
           </h3>
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-center mb-6">Database</h1>
 
           {/* Search Input */}
           <div className="mb-4">
