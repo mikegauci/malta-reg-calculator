@@ -58,12 +58,12 @@ const VehicleTaxCalculator: React.FC = () => {
 
     const lengthTaxRate = getLengthTaxRate(numericLength);
     const co2TaxRate = getCo2TaxRate(vehicleType, numericCo2Emissions, euroStandard, parseInt(year));
-  
+
     const lengthTax = parseFloat(((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2));
     const co2Tax = parseFloat((numericCo2Emissions * numericRv * co2TaxRate).toFixed(2));
     const totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
     const classicCarTax = parseFloat((totalTax * 0.40).toFixed(2));
-  
+
     const workings = [
       `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(4)} / 100 = ${lengthTax.toFixed(2)}`,
       `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(4)} = ${co2Tax.toFixed(2)}`,
@@ -314,8 +314,9 @@ const VehicleTaxCalculator: React.FC = () => {
               <tbody>
                 <tr>
                   <td className="border border-gray-700 p-2 capitalize">{inputs.vehicleType}</td>
-                  <td className="border border-gray-700 p-2">{results.totalTax.toFixed(2)}</td>
-                  <td className="border border-gray-700 p-2">{results.classicCarTax.toFixed(2)}</td>
+                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(results.totalTax)}</td>
+                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(results.classicCarTax)}</td>
+
                 </tr>
               </tbody>
             </table>
@@ -329,6 +330,11 @@ const VehicleTaxCalculator: React.FC = () => {
             </ul>
           </div>
         )}
+        <h3 className="text-center mt-4">
+          <a href="/admin" className="text-blue-500 underline">
+            Go to Database Dashboard
+          </a>
+        </h3>
 
       </div>
     </div>

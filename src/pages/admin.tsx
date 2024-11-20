@@ -20,8 +20,11 @@ const AdminPage = () => {
   }
 
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Entry; direction: "asc" | "desc" } | null>(null);
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -29,6 +32,7 @@ const AdminPage = () => {
         const { data, error } = await supabase.from("submissions").select("*");
         if (error) throw error;
         setEntries(data || []);
+        setFilteredEntries(data || []); // Initialize filtered entries
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message || "Failed to fetch entries");
@@ -51,6 +55,7 @@ const AdminPage = () => {
         (payload) => {
           const newEntry: Entry = payload.new as Entry;
           setEntries((prev) => [newEntry, ...prev]);
+          setFilteredEntries((prev) => [newEntry, ...prev]); // Add to filtered entries as well
         }
       )
       .subscribe();
@@ -61,64 +66,130 @@ const AdminPage = () => {
     };
   }, []);
 
+  // Update filtered entries based on search query
+  useEffect(() => {
+    const lowercasedQuery = searchQuery.toLowerCase();
+    const filtered = entries.filter((entry) =>
+      Object.values(entry)
+        .some((value) =>
+          value
+            .toString()
+            .toLowerCase()
+            .includes(lowercasedQuery)
+        )
+    );
+    setFilteredEntries(filtered);
+  }, [searchQuery, entries]);
+
+  // Apply sorting to filtered entries
+  const sortedEntries = React.useMemo(() => {
+    if (!sortConfig) return filteredEntries;
+    const sorted = [...filteredEntries];
+    sorted.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+    return sorted;
+  }, [filteredEntries, sortConfig]);
+
+  const requestSort = (key: keyof Entry) => {
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-6xl bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 className="text-center mb-2">
+          <a href="/" className="text-blue-500 underline">
+            Go to Calculator
+          </a>
+        </h3>
         <h1 className="text-2xl font-bold text-center mb-6">Admin Dashboard</h1>
+
+        {/* Search Input */}
+        <div className="mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search..."
+            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-gray-300"
+          />
+        </div>
+
         {loading ? (
           <p className="text-center text-gray-300">Loading...</p>
         ) : error ? (
           <p className="text-center text-red-500">{error}</p>
-        ) : entries.length === 0 ? (
-          <p className="text-center text-gray-300">No submissions available.</p>
+        ) : sortedEntries.length === 0 ? (
+          <p className="text-center text-gray-300">No matching entries found.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-700 text-left">
               <thead>
                 <tr className="bg-gray-700">
-                  <th className="border border-gray-600 p-2">Manufacturer</th>
-                  <th className="border border-gray-600 p-2">Model</th>
-                  <th className="border border-gray-600 p-2">Year</th>
-                  <th className="border border-gray-600 p-2">CO2 Emissions</th>
-                  <th className="border border-gray-600 p-2">RV</th>
-                  <th className="border border-gray-600 p-2">Length (MM)</th>
-                  <th className="border border-gray-600 p-2">Euro Standard</th>
-                  <th className="border border-gray-600 p-2">Vehicle Type</th>
-                  <th className="border border-gray-600 p-2">Total Tax (€)</th>
-                  <th className="border border-gray-600 p-2">Classic Tax (€)</th>
+                  {[
+                    { key: "manufacturer", label: "Manufacturer" },
+                    { key: "model", label: "Model" },
+                    { key: "year", label: "Year" },
+                    { key: "co2_emissions", label: "CO2" },
+                    { key: "rv", label: "RV" },
+                    { key: "length", label: "Length (MM)" },
+                    { key: "euro_standard", label: "Euro" },
+                    { key: "vehicle_type", label: "Fuel" },
+                    { key: "total_tax", label: "Total Tax (€)" },
+                    { key: "classic_car_tax", label: "Classic Tax (€)" },
+                  ].map(({ key, label }) => (
+                    <th
+                      key={key}
+                      className="border border-gray-600 p-2 cursor-pointer hover:bg-gray-600 hover:text-white transition-colors"
+                      onClick={() => requestSort(key as keyof Entry)}
+                    >
+                      <div className="flex items-center justify-between">
+                        {label}
+                        {sortConfig?.key === key && (
+                          <span>
+                            {sortConfig.direction === "asc" ? "▲" : "▼"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry, index) => (
+                {sortedEntries.map((entry, index) => (
                   <tr
                     key={entry.id}
                     className={index % 2 === 0 ? "bg-gray-800" : "bg-gray-700"}
                   >
-                    <td className="border border-gray-600 p-2">
-                      {entry.manufacturer}
-                    </td>
+                    <td className="border border-gray-600 p-2">{entry.manufacturer}</td>
                     <td className="border border-gray-600 p-2">{entry.model}</td>
                     <td className="border border-gray-600 p-2">{entry.year}</td>
-                    <td className="border border-gray-600 p-2">
-                      {entry.co2_emissions}
-                    </td>
+                    <td className="border border-gray-600 p-2">{entry.co2_emissions}</td>
                     <td className="border border-gray-600 p-2">{entry.rv}</td>
                     <td className="border border-gray-600 p-2">{entry.length}</td>
+                    <td className="border border-gray-600 p-2">{entry.euro_standard}</td>
+                    <td className="border border-gray-600 p-2 capitalize">{entry.vehicle_type}</td>
                     <td className="border border-gray-600 p-2">
-                      {entry.euro_standard}
-                    </td>
-                    <td className="border border-gray-600 p-2 capitalize">
-                      {entry.vehicle_type}
-                    </td>
-                    <td className="border border-gray-600 p-2">
-                      {entry.total_tax.toFixed(2)}
+                      {new Intl.NumberFormat().format(entry.total_tax)}
                     </td>
                     <td className="border border-gray-600 p-2">
-                      {entry.classic_car_tax.toFixed(2)}
+                      {new Intl.NumberFormat().format(entry.classic_car_tax)}
                     </td>
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}
