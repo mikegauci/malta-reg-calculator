@@ -18,7 +18,7 @@ interface Inputs {
 
 interface Results {
   totalTax: number;
-  classicCarTax: number;
+  classicCarTax: number | null;
   workings: string[];
 }
 
@@ -49,31 +49,55 @@ const VehicleTaxCalculator: React.FC = () => {
     const numericCo2Emissions = parseFloat(co2Emissions);
     const numericRv = parseFloat(rv);
     const numericLength = parseFloat(length);
+    const numericYear = parseInt(year);
 
-    if (isNaN(numericCo2Emissions) || isNaN(numericRv) || isNaN(numericLength)) {
+    if (
+      isNaN(numericCo2Emissions) ||
+      isNaN(numericRv) ||
+      isNaN(numericLength) ||
+      isNaN(numericYear)
+    ) {
       alert(
-        "Please enter valid numeric values for CO2 Emissions, Registration Value, and Length."
+        "Please enter valid numeric values for CO2 Emissions, Registration Value, Length, and Year."
       );
       return;
     }
 
-    const lengthTaxRate = getLengthTaxRate(numericLength);
-    const co2TaxRate = getCo2TaxRate(vehicleType, numericCo2Emissions, euroStandard, parseInt(year));
+    const currentYear = new Date().getFullYear();
+    const vehicleAge = currentYear - numericYear;
 
-    const lengthTax = parseFloat(((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2));
-    const co2Tax = parseFloat((numericCo2Emissions * numericRv * co2TaxRate).toFixed(2));
+    const lengthTaxRate = getLengthTaxRate(numericLength);
+    const co2TaxRate = getCo2TaxRate(
+      vehicleType,
+      numericCo2Emissions,
+      euroStandard,
+      numericYear
+    );
+
+    const lengthTax = parseFloat(
+      ((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2)
+    );
+    const co2Tax = parseFloat(
+      (numericCo2Emissions * numericRv * co2TaxRate).toFixed(2)
+    );
     const totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
-    const classicCarTax = parseFloat((totalTax * 0.40).toFixed(2));
+
+    // Calculate classicCarTax only for vehicles older than 30 years
+    const classicCarTax = vehicleAge >= 30 ? Math.round(totalTax * 0.40) : null;
 
     const workings = [
-      `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(4)} / 100 = ${lengthTax.toFixed(2)}`,
-      `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(4)} = ${co2Tax.toFixed(2)}`,
+      `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(
+        4
+      )} / 100 = ${lengthTax.toFixed(2)}`,
+      `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(
+        4
+      )} = ${co2Tax.toFixed(2)}`,
       `Total Tax Calculation: ${lengthTax.toFixed(2)} + ${co2Tax.toFixed(2)} = ${totalTax.toFixed(2)}`,
     ];
 
     setResults({
       totalTax,
-      classicCarTax,
+      classicCarTax: classicCarTax ?? 0,
       workings,
     });
 
@@ -81,10 +105,11 @@ const VehicleTaxCalculator: React.FC = () => {
     await submitData({
       ...inputs,
       totalTax,
-      classicCarTax,
-      workings: []
+      classicCarTax, // Include null if car is younger than 30 years
+      workings: [],
     });
   };
+
 
   const submitData = async (data: Inputs & Results) => {
     try {
@@ -188,108 +213,100 @@ const VehicleTaxCalculator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          Malta Car Registration Tax Calculator
-        </h1>
-        <form className="space-y-6">
+        <h1 className="text-xl font-bold text-center mb-2">Malta Car Registration Tax Calculator</h1>
+        <form className="space-y-6 text-sm"> {/* Apply text-sm for 14px font size */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Manufacturer:</label>
+              <label className="block mb-1">Manufacturer:</label>
               <input
                 type="text"
                 name="manufacturer"
                 placeholder="Honda"
                 value={inputs.manufacturer}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Model:</label>
+              <label className="block mb-1">Model:</label>
               <input
                 type="text"
                 name="model"
                 placeholder="NSX"
                 value={inputs.model}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Year:</label>
+              <label className="block mb-1">Year:</label>
               <input
                 type="number"
                 name="year"
                 placeholder="1991"
                 value={inputs.year}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                CO2 Emissions (g/km):
-              </label>
+              <label className="block mb-1">CO2 Emissions (g/km):</label>
               <input
                 type="number"
                 name="co2Emissions"
                 placeholder="237"
                 value={inputs.co2Emissions}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Registration Value (RV):
-              </label>
+              <label className="block mb-1">Registration Value (RV):</label>
               <input
                 type="number"
                 name="rv"
-                placeholder="58000"
+                placeholder="Market value in €"
                 value={inputs.rv}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Vehicle Length (mm):
-              </label>
+              <label className="block mb-1">Vehicle Length (mm):</label>
               <input
                 type="number"
                 name="length"
                 placeholder="4420"
                 value={inputs.length}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Vehicle Type:</label>
+              <label className="block mb-1">Fuel:</label>
               <select
                 name="vehicleType"
                 value={inputs.vehicleType}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               >
                 <option value="petrol">Petrol</option>
                 <option value="diesel">Diesel</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Euro Standard:</label>
+              <label className="block mb-1">Euro Standard:</label>
               <select
                 name="euroStandard"
                 value={inputs.euroStandard}
                 onChange={handleInputChange}
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               >
                 {[6, 5, 4, 3, 2, 1].map((num) => (
                   <option key={num} value={num}>
@@ -302,34 +319,42 @@ const VehicleTaxCalculator: React.FC = () => {
           <button
             type="button"
             onClick={calculateTax}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm"
           >
             Calculate and Submit
           </button>
         </form>
         {results && (
-          <div className="mt-6">
-            <h2 className="text-xl font-bold text-center mb-4">Results</h2>
-            <table className="w-full border-collapse border border-gray-700 mb-4">
+          <div className="mt-6 text-sm">
+            <h2 className="text-lg font-bold text-center mb-4">Results</h2>
+            <table className="w-full border-collapse border border-gray-700 mb-4 text-sm">
               <thead>
                 <tr>
-                  <th className="border border-gray-700 p-2">Vehicle Type</th>
+                  <th className="border border-gray-700 p-2">Fuel</th>
                   <th className="border border-gray-700 p-2">Total Registration Tax (€)</th>
-                  <th className="border border-gray-700 p-2">Classic Car Tax (€)</th>
+                  {results.classicCarTax !== null && (
+                    <th className="border border-gray-700 p-2">Classic Car Tax (€)</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td className="border border-gray-700 p-2 capitalize">{inputs.vehicleType}</td>
-                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(Math.round(results.totalTax))}</td>
-                  <td className="border border-gray-700 p-2">{new Intl.NumberFormat().format(Math.round(results.classicCarTax))}</td>
+                  <td className="border border-gray-700 p-2">
+                    {new Intl.NumberFormat().format(Math.round(results.totalTax))}
+                  </td>
+                  {results.classicCarTax !== null && (
+                    <td className="border border-gray-700 p-2">
+                      {new Intl.NumberFormat().format(Math.round(results.classicCarTax))}
+                    </td>
+                  )}
                 </tr>
               </tbody>
             </table>
             <h3 className="text-lg font-bold mb-2">Calculation Workings:</h3>
             <ul className="list-disc pl-6 space-y-2">
               {results.workings.map((line, index) => (
-                <li key={index} className="text-sm text-gray-300">
+                <li key={index} className="text-gray-300">
                   {line}
                 </li>
               ))}
@@ -341,9 +366,9 @@ const VehicleTaxCalculator: React.FC = () => {
             Go to Database
           </Link>
         </h3>
-
       </div>
     </div>
+
 
 
   );
