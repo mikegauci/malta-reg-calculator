@@ -30,7 +30,10 @@ const AdminPage = () => {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const { data, error } = await supabase.from("submissions").select("*");
+        const { data, error } = await supabase
+          .from("submissions")
+          .select("*")
+          .order("id", { ascending: false }); // Sort by id descending
         if (error) throw error;
         setEntries(data || []);
         setFilteredEntries(data || []); // Initialize filtered entries
@@ -181,10 +184,10 @@ const AdminPage = () => {
                     <td className="border border-gray-600 p-2">{entry.length}</td>
                     <td className="border border-gray-600 p-2">{entry.euro_standard}</td>
                     <td className="border border-gray-600 p-2 capitalize">{entry.vehicle_type}</td>
-                    <td className="border border-gray-600 p-2">
+                    <td className="border bg-emerald-600 border-gray-600 p-2">
                       {new Intl.NumberFormat().format(Math.round(entry.total_tax))}
                     </td>
-                    <td className="border border-gray-600 p-2">
+                    <td className="border bg-emerald-700 border-gray-600 p-2">
                       {new Intl.NumberFormat().format(Math.round(entry.classic_car_tax))}
                     </td>
                   </tr>

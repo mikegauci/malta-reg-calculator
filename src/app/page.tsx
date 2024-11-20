@@ -198,6 +198,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="text"
                 name="manufacturer"
+                placeholder="Honda"
                 value={inputs.manufacturer}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -208,6 +209,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="text"
                 name="model"
+                placeholder="NSX"
                 value={inputs.model}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -220,6 +222,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="number"
                 name="year"
+                placeholder="1991"
                 value={inputs.year}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -232,6 +235,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="number"
                 name="co2Emissions"
+                placeholder="237"
                 value={inputs.co2Emissions}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -246,6 +250,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="number"
                 name="rv"
+                placeholder="58000"
                 value={inputs.rv}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -258,6 +263,7 @@ const VehicleTaxCalculator: React.FC = () => {
               <input
                 type="number"
                 name="length"
+                placeholder="4420"
                 value={inputs.length}
                 onChange={handleInputChange}
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -332,7 +338,7 @@ const VehicleTaxCalculator: React.FC = () => {
         )}
         <h3 className="text-center mt-4">
           <Link href="/admin" className="text-blue-500 underline">
-            Go to Database Dashboard
+            Go to Database
           </Link>
         </h3>
 
