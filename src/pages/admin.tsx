@@ -2,6 +2,7 @@
 
 import { supabase } from "../lib/supabase";
 import React, { useEffect, useState } from "react";
+import "../app/globals.css";
 
 const AdminPage = () => {
   interface Entry {
