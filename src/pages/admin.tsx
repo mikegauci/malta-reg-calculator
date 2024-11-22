@@ -77,10 +77,8 @@ const AdminPage = () => {
     const filtered = entries.filter((entry) =>
       Object.values(entry)
         .some((value) =>
-          value
-            .toString()
-            .toLowerCase()
-            .includes(lowercasedQuery)
+          value &&
+          value.toString().toLowerCase().includes(lowercasedQuery)
         )
     );
     setFilteredEntries(filtered);
