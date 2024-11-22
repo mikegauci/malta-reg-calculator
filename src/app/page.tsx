@@ -14,7 +14,7 @@ interface Inputs {
   manufacturer: string;
   model: string;
   year: string;
-  electricRange?: string; // Optional Electric Range field
+  electricRange?: string;
 }
 
 interface Results {
@@ -46,9 +46,7 @@ const VehicleTaxCalculator: React.FC = () => {
   };
 
   const calculateTax = async () => {
-    const { co2Emissions, rv, length, euroStandard, vehicleType, year, electricRange } =
-      inputs;
-
+    const { co2Emissions, rv, length, euroStandard, vehicleType, year, electricRange } = inputs;
     const numericCo2Emissions = parseFloat(co2Emissions);
     const numericRv = parseFloat(rv);
     const numericLength = parseFloat(length);
@@ -84,16 +82,20 @@ const VehicleTaxCalculator: React.FC = () => {
       totalTax = 0;
       workings.push("Electric vehicles are exempt from registration tax.");
     } else if (vehicleType === "plugin-hybrid" && numericElectricRange >= 50) {
-      // Plugin hybrids with electric range <= 50 have zero tax
+      // Plugin hybrids with electric range >= 50 have zero tax
       totalTax = 0;
       workings.push(
         `Plug-in hybrid with electric range ${numericElectricRange}km is exempt from registration tax.`
       );
     } else {
       const lengthTaxRate = getLengthTaxRate(numericLength);
+      const adjustedCo2 = (vehicleType === "hybrid")
+        ? Math.round(numericCo2Emissions * 0.70)
+        : numericCo2Emissions;
+
       const co2TaxRate = getCo2TaxRate(
         vehicleType,
-        numericCo2Emissions,
+        adjustedCo2,
         euroStandard,
         numericYear
       );
@@ -102,7 +104,7 @@ const VehicleTaxCalculator: React.FC = () => {
         ((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2)
       );
       const co2Tax = parseFloat(
-        (numericCo2Emissions * numericRv * co2TaxRate).toFixed(2)
+        (adjustedCo2 * numericRv * co2TaxRate).toFixed(2)
       );
       totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
 
@@ -113,13 +115,20 @@ const VehicleTaxCalculator: React.FC = () => {
         `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(
           4
         )} / 100 = ${lengthTax.toFixed(2)}`,
-        `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(
+        `CO2 Tax Calculation: ${adjustedCo2} * ${numericRv} * ${co2TaxRate.toFixed(
           4
         )} = ${co2Tax.toFixed(2)}`,
         `Total Tax Calculation: ${lengthTax.toFixed(2)} + ${co2Tax.toFixed(
           2
         )} = ${totalTax.toFixed(2)}`
       );
+
+      // Add the hybrid-specific workings
+      if (vehicleType === "hybrid" || vehicleType === "plugin-hybrid") {
+        workings.unshift(
+          `Adjusted CO2 (Hybrid): ${numericCo2Emissions} * 30% = ${adjustedCo2}`
+        );
+      }
     }
 
     setResults({
@@ -174,56 +183,19 @@ const VehicleTaxCalculator: React.FC = () => {
     euroStandard: number,
     year: number
   ): number => {
-    const co2RateTable: Record<
-      VehicleType,
-      { range: [number, number]; rates: number[] }[]
-    > = {
-      petrol: [
-        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
-        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
-        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
-        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
-        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
-        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
-        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
-        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
-      ],
-      diesel: [
-        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
-        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
-        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
-        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
-        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
-        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
-        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
-        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
-      ],
-      hybrid: [
-        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
-        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
-        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
-        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
-        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
-        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
-        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
-        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
-      ],
-      "plugin-hybrid": [
-        { range: [0, 100], rates: [0.05, 0.10, 0.15, 0.18] },
-        { range: [101, 130], rates: [0.07, 0.12, 0.17, 0.20] },
-        { range: [131, 140], rates: [0.08, 0.14, 0.19, 0.23] },
-        { range: [141, 150], rates: [0.09, 0.16, 0.22, 0.26] },
-        { range: [151, 180], rates: [0.12, 0.20, 0.28, 0.33] },
-        { range: [181, 220], rates: [0.14, 0.24, 0.30, 0.36] },
-        { range: [221, 250], rates: [0.16, 0.26, 0.34, 0.39] },
-        { range: [251, Infinity], rates: [0.18, 0.28, 0.36, 0.42] },
-      ],
-      electric: [],
-    };
+    // Define a common rate table for all relevant vehicle types
+    const commonRateTable = [
+      { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
+      { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
+      { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
+      { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
+      { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
+      { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
+      { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
+      { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
+    ];
 
-    if (vehicleType === "electric") return 0;
-
-    // Special rates for diesel vehicles older than 2012
+    // Special diesel rates for vehicles older than 2012
     const dieselOldRateTable = [
       { range: [0, 100], rates: [0.0021, 0.0021, 0.0032, 0.0037] },
       { range: [101, 130], rates: [0.0024, 0.0024, 0.0036, 0.0042] },
@@ -235,24 +207,26 @@ const VehicleTaxCalculator: React.FC = () => {
       { range: [251, Infinity], rates: [0.0043, 0.0043, 0.0065, 0.0075] },
     ];
 
-    // Determine euro index
-    const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
 
-    // Use special diesel table if year is before 2012
-    if (vehicleType === "diesel" && year < 2012) {
-      for (const { range, rates } of dieselOldRateTable) {
-        if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-          return rates[Math.min(euroIndex, 3)];
-        }
-      }
-    }
+  // Determine euro index
+  const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
 
-    const ranges = co2RateTable[vehicleType];
-    for (const { range, rates } of ranges) {
+  // Use special diesel table if year is before 2012
+  if (vehicleType === "diesel" && year < 2012) {
+    for (const { range, rates } of dieselOldRateTable) {
       if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-        return rates[Math.max(0, Math.min(6 - euroStandard, 3))] / 100;
+        return rates[Math.min(euroIndex, 3)];
       }
     }
+  }
+
+  // For all other types, use the common rate table
+  const ranges = commonRateTable;
+  for (const { range, rates } of ranges) {
+    if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
+      return rates[Math.max(0, Math.min(6 - euroStandard, 3))] / 100;
+    }
+  }
 
     throw new Error("CO2 emissions out of range.");
   };
