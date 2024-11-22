@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React, { useState } from "react";
 
-type VehicleType = "petrol" | "diesel";
+type VehicleType = "petrol" | "diesel" | "hybrid" | "plugin-hybrid" | "electric";
 
 interface Inputs {
   co2Emissions: string;
@@ -14,6 +14,7 @@ interface Inputs {
   manufacturer: string;
   model: string;
   year: string;
+  electricRange?: string; // Optional Electric Range field
 }
 
 interface Results {
@@ -32,6 +33,7 @@ const VehicleTaxCalculator: React.FC = () => {
     manufacturer: "",
     model: "",
     year: "",
+    electricRange: "",
   });
 
   const [results, setResults] = useState<Results | null>(null);
@@ -44,12 +46,14 @@ const VehicleTaxCalculator: React.FC = () => {
   };
 
   const calculateTax = async () => {
-    const { co2Emissions, rv, length, euroStandard, vehicleType, year } = inputs;
+    const { co2Emissions, rv, length, euroStandard, vehicleType, year, electricRange } =
+      inputs;
 
     const numericCo2Emissions = parseFloat(co2Emissions);
     const numericRv = parseFloat(rv);
     const numericLength = parseFloat(length);
     const numericYear = parseInt(year);
+    const numericElectricRange = parseFloat(electricRange || "0");
 
     if (
       isNaN(numericCo2Emissions) ||
@@ -63,37 +67,60 @@ const VehicleTaxCalculator: React.FC = () => {
       return;
     }
 
+    if (vehicleType === "plugin-hybrid" && isNaN(numericElectricRange)) {
+      alert("Please enter a valid numeric value for Electric Range.");
+      return;
+    }
+
     const currentYear = new Date().getFullYear();
     const vehicleAge = currentYear - numericYear;
 
-    const lengthTaxRate = getLengthTaxRate(numericLength);
-    const co2TaxRate = getCo2TaxRate(
-      vehicleType,
-      numericCo2Emissions,
-      euroStandard,
-      numericYear
-    );
+    let totalTax = 0;
+    let classicCarTax: number | null = null;
+    const workings: string[] = [];
 
-    const lengthTax = parseFloat(
-      ((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2)
-    );
-    const co2Tax = parseFloat(
-      (numericCo2Emissions * numericRv * co2TaxRate).toFixed(2)
-    );
-    const totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
+    if (vehicleType === "electric") {
+      // Electric vehicles always have zero tax
+      totalTax = 0;
+      workings.push("Electric vehicles are exempt from registration tax.");
+    } else if (vehicleType === "plugin-hybrid" && numericElectricRange >= 50) {
+      // Plugin hybrids with electric range <= 50 have zero tax
+      totalTax = 0;
+      workings.push(
+        `Plug-in hybrid with electric range ${numericElectricRange}km is exempt from registration tax.`
+      );
+    } else {
+      const lengthTaxRate = getLengthTaxRate(numericLength);
+      const co2TaxRate = getCo2TaxRate(
+        vehicleType,
+        numericCo2Emissions,
+        euroStandard,
+        numericYear
+      );
 
-    // Calculate classicCarTax only for vehicles older than 30 years
-    const classicCarTax = vehicleAge >= 30 ? Math.round(totalTax * 0.40) : null;
+      const lengthTax = parseFloat(
+        ((numericLength * numericRv * lengthTaxRate) / 100).toFixed(2)
+      );
+      const co2Tax = parseFloat(
+        (numericCo2Emissions * numericRv * co2TaxRate).toFixed(2)
+      );
+      totalTax = parseFloat((lengthTax + co2Tax).toFixed(2));
 
-    const workings = [
-      `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(
-        4
-      )} / 100 = ${lengthTax.toFixed(2)}`,
-      `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(
-        4
-      )} = ${co2Tax.toFixed(2)}`,
-      `Total Tax Calculation: ${lengthTax.toFixed(2)} + ${co2Tax.toFixed(2)} = ${totalTax.toFixed(2)}`,
-    ];
+      // Calculate classicCarTax only for vehicles older than 30 years
+      classicCarTax = vehicleAge >= 30 ? Math.round(totalTax * 0.40) : null;
+
+      workings.push(
+        `Length Tax Calculation: ${numericLength} * ${numericRv} * ${lengthTaxRate.toFixed(
+          4
+        )} / 100 = ${lengthTax.toFixed(2)}`,
+        `CO2 Tax Calculation: ${numericCo2Emissions} * ${numericRv} * ${co2TaxRate.toFixed(
+          4
+        )} = ${co2Tax.toFixed(2)}`,
+        `Total Tax Calculation: ${lengthTax.toFixed(2)} + ${co2Tax.toFixed(
+          2
+        )} = ${totalTax.toFixed(2)}`
+      );
+    }
 
     setResults({
       totalTax,
@@ -105,11 +132,10 @@ const VehicleTaxCalculator: React.FC = () => {
     await submitData({
       ...inputs,
       totalTax,
-      classicCarTax, // Include null if car is younger than 30 years
+      classicCarTax,
       workings: [],
     });
   };
-
 
   const submitData = async (data: Inputs & Results) => {
     try {
@@ -172,7 +198,30 @@ const VehicleTaxCalculator: React.FC = () => {
         { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
         { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
       ],
+      hybrid: [
+        { range: [0, 100], rates: [0.07, 0.15, 0.20, 0.23] },
+        { range: [101, 130], rates: [0.09, 0.17, 0.23, 0.26] },
+        { range: [131, 140], rates: [0.10, 0.19, 0.26, 0.30] },
+        { range: [141, 150], rates: [0.11, 0.22, 0.29, 0.33] },
+        { range: [151, 180], rates: [0.16, 0.24, 0.32, 0.37] },
+        { range: [181, 220], rates: [0.18, 0.26, 0.35, 0.40] },
+        { range: [221, 250], rates: [0.21, 0.29, 0.38, 0.44] },
+        { range: [251, Infinity], rates: [0.23, 0.31, 0.41, 0.47] },
+      ],
+      "plugin-hybrid": [
+        { range: [0, 100], rates: [0.05, 0.10, 0.15, 0.18] },
+        { range: [101, 130], rates: [0.07, 0.12, 0.17, 0.20] },
+        { range: [131, 140], rates: [0.08, 0.14, 0.19, 0.23] },
+        { range: [141, 150], rates: [0.09, 0.16, 0.22, 0.26] },
+        { range: [151, 180], rates: [0.12, 0.20, 0.28, 0.33] },
+        { range: [181, 220], rates: [0.14, 0.24, 0.30, 0.36] },
+        { range: [221, 250], rates: [0.16, 0.26, 0.34, 0.39] },
+        { range: [251, Infinity], rates: [0.18, 0.28, 0.36, 0.42] },
+      ],
+      electric: [],
     };
+
+    if (vehicleType === "electric") return 0;
 
     // Special rates for diesel vehicles older than 2012
     const dieselOldRateTable = [
@@ -198,17 +247,15 @@ const VehicleTaxCalculator: React.FC = () => {
       }
     }
 
-    // Default table
     const ranges = co2RateTable[vehicleType];
     for (const { range, rates } of ranges) {
       if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-        return rates[euroIndex] / 100; // Convert percentage to decimal
+        return rates[Math.max(0, Math.min(6 - euroStandard, 3))] / 100;
       }
     }
 
     throw new Error("CO2 emissions out of range.");
   };
-
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
@@ -298,6 +345,9 @@ const VehicleTaxCalculator: React.FC = () => {
               >
                 <option value="petrol">Petrol</option>
                 <option value="diesel">Diesel</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="plugin-hybrid">Plug-in Hybrid</option>
+                <option value="electric">Electric</option>
               </select>
             </div>
             <div>
@@ -314,6 +364,21 @@ const VehicleTaxCalculator: React.FC = () => {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              {inputs.vehicleType === "plugin-hybrid" && (
+                <div>
+                  <label className="block mb-1">Electric Range (km):</label>
+                  <input
+                    type="number"
+                    name="electricRange"
+                    placeholder="Enter electric range"
+                    value={inputs.electricRange}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
+                  />
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -368,9 +433,6 @@ const VehicleTaxCalculator: React.FC = () => {
         </h3>
       </div>
     </div>
-
-
-
   );
 };
 
