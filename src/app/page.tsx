@@ -208,25 +208,25 @@ const VehicleTaxCalculator: React.FC = () => {
     ];
 
 
-  // Determine euro index
-  const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
+    // Determine euro index
+    const euroIndex = Math.max(0, Math.min(6 - euroStandard, 3));
 
-  // Use special diesel table if year is before 2012
-  if (vehicleType === "diesel" && year < 2012) {
-    for (const { range, rates } of dieselOldRateTable) {
-      if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-        return rates[Math.min(euroIndex, 3)];
+    // Use special diesel table if year is before 2012
+    if (vehicleType === "diesel" && year < 2012) {
+      for (const { range, rates } of dieselOldRateTable) {
+        if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
+          return rates[Math.min(euroIndex, 3)];
+        }
       }
     }
-  }
 
-  // For all other types, use the common rate table
-  const ranges = commonRateTable;
-  for (const { range, rates } of ranges) {
-    if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
-      return rates[Math.max(0, Math.min(6 - euroStandard, 3))] / 100;
+    // For all other types, use the common rate table
+    const ranges = commonRateTable;
+    for (const { range, rates } of ranges) {
+      if (co2Emissions >= range[0] && co2Emissions <= range[1]) {
+        return rates[Math.max(0, Math.min(6 - euroStandard, 3))] / 100;
+      }
     }
-  }
 
     throw new Error("CO2 emissions out of range.");
   };
@@ -285,8 +285,36 @@ const VehicleTaxCalculator: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1">Registration Value (RV):</label>
+            <div className="group">
+              <label className="relative block mb-1 flex items-center">
+                Registration Value (RV):
+                <span className="absolute ml-2 text-blue-500 cursor-pointer group" style={{ right: 35, top: 35 }}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                    />
+                  </svg>
+                  <div className="absolute hidden group-hover:block bg-gray-800 text-gray-100 text-xs rounded p-2 shadow-lg mt-1 w-52">
+                    Divide the car's price by 30% to estimate its registration value. For instance, a €30,000 car would have an estimated registration value of <strong>€21,000</strong>.
+                  </div>
+                </span>
+                <style jsx>{`
+                  @media (max-width: 768px) {
+                    span {
+                      right: 6px !important;
+                    }
+                  }
+                `}</style>
+              </label>
               <input
                 type="number"
                 name="rv"
@@ -296,6 +324,7 @@ const VehicleTaxCalculator: React.FC = () => {
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"
               />
             </div>
+
             <div>
               <label className="block mb-1">Vehicle Length (mm):</label>
               <input
