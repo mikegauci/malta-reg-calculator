@@ -304,7 +304,7 @@ const VehicleTaxCalculator: React.FC = () => {
                     />
                   </svg>
                   <div className="absolute hidden group-hover:block bg-gray-800 text-gray-100 text-xs rounded p-2 shadow-lg mt-1 w-52">
-                    Divide the car's price by 30% to estimate its registration value. For instance, a €30,000 car would have an estimated registration value of <strong>€21,000</strong>.
+                    Divide the car&#39;s price by 30% to estimate its registration value. For instance, a €30,000 car would have an estimated registration value of <strong>€21,000</strong>.
                   </div>
                 </span>
                 <style jsx>{`
